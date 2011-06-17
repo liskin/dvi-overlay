@@ -9,6 +9,7 @@ import Data.Function
 import Data.Maybe
 import Debug.Trace.LocationTH
 import System.Environment
+import Text.Regex.Posix
 
 import DviAsm
 
@@ -61,9 +62,20 @@ makeFontDefs d1 d2 = ( ["font", "definitions"], f1 ++ f2 )
         Just (_, f1) = filterSection ["font", "definitions"] (const True) d1
         Just (_, f2) = filterSection ["font", "definitions"] (const True) d2
 
+fixRef :: B8.ByteString -> B8.ByteString
+fixRef s = case getAllSubmatches $ s =~ regex of
+    [_, (ind, len)] -> let (a, b) = B8.splitAt ind s in a `B8.append` B8.drop len b
+    _ -> s
+    where regex = "pdf:bann.*GoTo/D\\(([^\\)]*:)*[^\\)]*:" :: String
+
+fixRefs :: [DataLine] -> [DataLine]
+fixRefs = map f
+    where f ("xxx", s) = ("xxx", fixRef s)
+          f x = x
+
 overlayPage :: Section -> Section -> Section
-overlayPage (h, p1) (_, p2) = (h, enclose p1 ++ enclose p2)
-    where enclose p = ("push", "") : p ++ [("pop", "")]
+overlayPage (h, p1) (_, p2) = (h, f p1 ++ f p2)
+    where f p = ("push", "") : fixRefs p ++ [("pop", "")]
 
 overlay :: [Section] -> [Section] -> [Section]
 overlay d1 d2 = runErr $ do
