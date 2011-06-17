@@ -5,8 +5,9 @@
 \def\overlay@ratio{1:11}
 \def\overlay@twoside{}
 \def\overlay@showframe{}
+\newif\ifsecond
 
-\DeclareOption{second}{\def\overlay@doc{doc2}\def\overlay@ratio{11:1}}
+\DeclareOption{second}{\def\overlay@doc{doc2}\def\overlay@ratio{11:1}\secondtrue}
 \DeclareOption{twoside}{\def\overlay@twoside{twoside}}
 \DeclareOption{showframe}{\def\overlay@showframe{showframe}}
 \DeclareOption*{\PackageWarning{overlay}{Unknown ‘\CurrentOption’}}
@@ -15,11 +16,23 @@
 \edef\@classoptionslist{\@classoptionslist,dvipdfmx,dvipdfm}
 
 \RequirePackage{fixltx2e}
+\RequirePackage{calc}
 \RequirePackage[utf8]{inputenc}
 \RequirePackage[T1]{fontenc}
 \RequirePackage{lmodern}
 \RequirePackage[setpagesize=false,unicode]{hyperref}
 \RequirePackage[a4paper,landscape,scale={0.4,0.8},hmarginratio=\overlay@ratio,\overlay@twoside,\overlay@showframe]{geometry}
 \RequirePackage{xcolor}
+\RequirePackage{fancyhdr}
 
 \def\HyperDestNameFilter#1{\overlay@doc:#1}
+
+\ifsecond
+    \pagestyle{empty}
+\else
+    \pagestyle{fancy}
+    % head above both columns
+    \headwidth=\paperwidth
+    \advance\headwidth-2\oddsidemargin
+    \advance\headwidth-2in
+\fi
