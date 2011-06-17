@@ -31,7 +31,7 @@ maxBy cmp x y = case cmp x y of
 maxPt :: B8.ByteString -> B8.ByteString -> B8.ByteString
 maxPt = maxBy (compare `on` f)
     where
-        f (B8.readInt -> Just (i, "pt")) = i
+        f (reads . B8.unpack -> [(i, "pt")]) = i :: Double
         f s = error $ B8.unpack s ++ " is not a value in points"
 
 maxBSInt :: B8.ByteString -> B8.ByteString -> Int
