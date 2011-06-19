@@ -82,7 +82,7 @@ overlay d1 d2 = runErr $ do
     when (checkSection ["preamble"] ["id", "numerator", "denumerator", "magnification"] d1 d2) $
         fail "preambles don't match"
     when (checkSection ["postamble"] ["pages"] d1 d2) $
-        fail "preambles don't match"
+        fail "number of pages differ"
     let begin = [ $check fromJust $ filterSection ["preamble"] (const True) d1
                 , makePostamble d1 d2, makeFontDefs d1 d2 ]
         ps = [ overlayPage a b | a <- pages d1 | b <- pages d2 ]
