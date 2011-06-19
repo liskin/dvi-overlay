@@ -31,3 +31,17 @@
     \advance\headwidth-2\oddsidemargin
     \advance\headwidth-2in
 \fi
+
+\newcount\overlay@sync
+\newcount\overlay@syncpage
+\overlay@sync=1
+\newcommand\syncpages{%
+    \newpage%
+    \edef\overlay@synccnt{overlay@sync@\romannumeral\the\overlay@sync}%
+    \immediate\write\@auxout%
+	{\string\global\string\@namedef{\overlay@synccnt}{\thepage}}%
+    \@ifundefined{\overlay@synccnt}{\global\overlay@syncpage=0\relax}%
+	{\global\overlay@syncpage=\@nameuse{\overlay@synccnt}\relax}%
+    \@whilenum\c@page<\overlay@syncpage\do{\mbox{}\newpage}%
+    \advance\overlay@sync1\relax%
+}
