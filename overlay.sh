@@ -20,4 +20,9 @@ aux() {
 A1=${1%.tex}.aux
 A2=${2%.tex}.aux
 
-$LATEX $1 && $LATEX $2 && aux $A1 doc1 >>$A2 && aux $A2 doc2 >>$A1
+set -e
+
+$LATEX $1
+$LATEX $2
+aux $A1 doc1 >>$A2
+aux $A2 doc2 >>$A1

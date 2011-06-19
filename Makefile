@@ -1,5 +1,7 @@
 all:
-	./overlay.sh test.tex test2.tex && dviasm test.dvi >test.dasm && dviasm test2.dvi >test2.dasm && ./DviOverlay test.dasm test2.dasm test3.dasm && dviasm test3.dasm >test3.dvi && dvipdfmx test3.dvi && okular test3.pdf
+	./overlay.sh test.tex test2.tex
+	./dvi-overlay.sh test.dvi test2.dvi out.dvi
+	dvipdfmx out.dvi
 
 DviOverlay: DviOverlay.hs DviAsm.hs
 	ghc --make -O2 DviOverlay
