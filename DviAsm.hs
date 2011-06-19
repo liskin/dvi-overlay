@@ -1,5 +1,4 @@
-{-# LANGUAGE OverloadedStrings, ViewPatterns #-}
-{-# LANGUAGE NoMonomorphismRestriction, FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings, ViewPatterns, FlexibleContexts #-}
 module DviAsm
     ( DataLine
     , SectionHeader
@@ -8,64 +7,60 @@ module DviAsm
     , saveDviAsm
     ) where
 
-import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.Char8 as L8
-import Control.Applicative hiding (many, (<|>), optional)
 import Control.Monad.State
-import Data.Maybe
-import Text.Parsec
-import Text.Parsec.ByteString.Lazy
+import Data.Char
+import Data.Int
 
-type DataLine = (B8.ByteString, B8.ByteString)
-type SectionHeader = [B8.ByteString]
+type DataLine = (L8.ByteString, L8.ByteString)
+type SectionHeader = L8.ByteString
 type Section = (SectionHeader, [DataLine])
 
-spaces' = skipMany (char ' ')
 
-alstr :: Parser B8.ByteString
-alstr = B8.pack <$> many1 alphaNum
+isEmptyLine :: L8.ByteString -> Bool
+isEmptyLine l = L8.all isSpace l || L8.head l == '%'
 
-sectionHeader :: Parser SectionHeader
-sectionHeader = between (char '[') (char ']') (sepBy1 alstr spaces') <* newline
+parseSectionHeader :: L8.ByteString -> SectionHeader
+parseSectionHeader h | L8.head h == '[' && L8.last h == ']' = h'
+    where h' = L8.tail $ L8.init h
+parseSectionHeader _ = error "malformed section header"
 
-dataLine :: Parser DataLine
-dataLine = pure (,) <*> op <*> (B8.pack <$> manyTill anyChar newline)
-    where op = alstr <* (string ":" <* optional (char ' '))
+parseDataLine :: L8.ByteString -> DataLine
+parseDataLine (L8.dropWhile isSpace -> l) = (a, snd $ L8.splitAt 2 b)
+    where (a, b) = L8.break (==':') l
 
-dataLines :: Parser [DataLine]
-dataLines = catMaybes <$> many1 (spaces' *> line)
-    where line = (newline *> pure Nothing) <|> (Just <$> dataLine)
+parseSection :: [L8.ByteString] -> (Section, [L8.ByteString])
+parseSection (h:r) = ((parseSectionHeader h, map parseDataLine ls), r')
+    where (ls, r') = break ("[" `L8.isPrefixOf`) r
 
-section :: Parser Section
-section = pure (,) <*> sectionHeader <*> dataLines
+parseSections :: [L8.ByteString] -> [Section]
+parseSections [] = []
+parseSections s = x : parseSections rest
+    where (x, rest) = parseSection s
 
-sections :: Parser [Section]
-sections = many1 section <* eof
-
--- TODO: lazy parser
+loadDviAsm :: String -> IO [Section]
+loadDviAsm f = do
+    f <- (filter (not . isEmptyLine) . L8.lines) `fmap` L8.readFile f
+    return $ parseSections f
 
 
 format :: [Section] -> L8.ByteString
-format s = L8.unlines $ map (L8.fromChunks . (:[])) $ concatMap formatSection s
+format s = L8.unlines $ concatMap formatSection s
 
-formatSection :: Section -> [B8.ByteString]
+formatSection :: Section -> [L8.ByteString]
 formatSection (h, ls) = formatHeader h : evalState (mapM formatDataLine ls) 0 ++ [""]
 
-formatHeader :: SectionHeader -> B8.ByteString
-formatHeader h = '[' `B8.cons` B8.intercalate " " h `B8.append` "]"
+formatHeader :: SectionHeader -> L8.ByteString
+formatHeader h = '[' `L8.cons` h `L8.append` "]"
 
-formatDataLine :: (MonadState Int m) => DataLine -> m B8.ByteString
+formatDataLine :: (MonadState Int64 m) => DataLine -> m L8.ByteString
 formatDataLine (a, b) = do
     when (a == "pop") $ modify pred
     i <- get
     when (a == "push") $ modify succ
-    return $ B8.replicate (i * 2) ' ' `B8.append` a `B8.append` ": " `B8.append` b
-
-
-loadDviAsm :: String -> IO [Section]
-loadDviAsm f = do
-    Right x <- parseFromFile sections f
-    return x
+    return $ L8.replicate (i * 2) ' ' `L8.append` a `L8.append` ": " `L8.append` b
 
 saveDviAsm :: FilePath -> [Section] -> IO ()
 saveDviAsm f = L8.writeFile f . format
+
+
