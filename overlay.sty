@@ -3,12 +3,10 @@
 
 \def\overlay@doc{doc1}
 \def\overlay@ratio{1:11}
-\def\overlay@twoside{}
 \def\overlay@showframe{}
 \newif\ifsecond
 
 \DeclareOption{second}{\def\overlay@doc{doc2}\def\overlay@ratio{11:1}\secondtrue}
-\DeclareOption{twoside}{\def\overlay@twoside{twoside}}
 \DeclareOption{showframe}{\def\overlay@showframe{showframe}}
 \DeclareOption*{\PackageWarning{overlay}{Unknown ‘\CurrentOption’}}
 \ProcessOptions\relax
@@ -16,12 +14,10 @@
 \edef\@classoptionslist{\@classoptionslist,dvipdfmx,dvipdfm}
 
 \RequirePackage{fixltx2e}
+\RequirePackage{etex}
 \RequirePackage{calc}
-\RequirePackage[utf8]{inputenc}
-\RequirePackage[T1]{fontenc}
-\RequirePackage{lmodern}
 \RequirePackage[setpagesize=false,unicode]{hyperref}
-\RequirePackage[a4paper,landscape,scale={0.4,0.8},hmarginratio=\overlay@ratio,\overlay@twoside,\overlay@showframe]{geometry}
+\RequirePackage[a4paper,landscape,scale={0.4,0.8},hmarginratio=\overlay@ratio,\overlay@showframe]{geometry}
 \RequirePackage{fancyhdr}
 
 \def\HyperDestNameFilter#1{\overlay@doc:#1}
