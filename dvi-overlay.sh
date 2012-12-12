@@ -9,7 +9,7 @@ fi
 
 set -e
 
-dviasm $1 >$1.dasm
-dviasm $2 >$2.dasm
+dviasm -o $1.dasm $1
+dviasm -o $2.dasm $2
 ./DviOverlay $1.dasm $2.dasm $3.dasm
-dviasm $3.dasm >$3
+dviasm -o $3 $3.dasm
