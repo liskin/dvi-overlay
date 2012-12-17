@@ -40,7 +40,7 @@ parseSections s = x : parseSections rest
 
 loadDviAsm :: String -> IO [Section]
 loadDviAsm f = do
-    f <- (filter (not . isEmptyLine) . L8.lines) `fmap` L8.readFile f
+    f <- (filter (not . isEmptyLine) . L8.lines . dropCR) `fmap` L8.readFile f
     return $ parseSections f
 
 
@@ -63,4 +63,5 @@ formatDataLine (a, b) = do
 saveDviAsm :: FilePath -> [Section] -> IO ()
 saveDviAsm f = L8.writeFile f . format
 
-
+dropCR :: L8.ByteString -> L8.ByteString
+dropCR = L8.filter ('\r' /=)
